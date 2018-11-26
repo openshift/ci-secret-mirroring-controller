@@ -182,7 +182,9 @@ func (c *SecretMirror) reconcile(key string) error {
 	var mirrorErrors []error
 	for _, mirrorConfig := range c.config.Secrets {
 		if mirrorConfig.From.Namespace == namespace && mirrorConfig.From.Name == name {
-			mirrorErrors = append(mirrorErrors, c.mirrorSecret(source, mirrorConfig.To, logger))
+			if err := c.mirrorSecret(source, mirrorConfig.To, logger); err != nil {
+				mirrorErrors = append(mirrorErrors, err)
+			}
 		}
 	}
 

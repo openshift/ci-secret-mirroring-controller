@@ -21,11 +21,6 @@ spec:
       name: secret-mirroring-controller:latest
   runPolicy: Serial
   source:
-    dockerfile: |
-      FROM docker.io/alpine:latest
-
-      RUN apk add --no-cache ca-certificates
-      COPY ci-secret-mirroring-controller /ci-secret-mirroring-controller
     git:
       ref: master
       uri: https://github.com/openshift/ci-secret-mirroring-controller.git
@@ -43,6 +38,7 @@ spec:
         kind: DockerImage
         name: docker.io/alpine:latest
       imageOptimizationPolicy: SkipLayers
+      dockerfilePath: image/Dockerfile
     type: Docker
   successfulBuildsHistoryLimit: 1
   triggers:

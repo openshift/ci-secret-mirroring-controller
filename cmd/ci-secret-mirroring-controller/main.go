@@ -1,17 +1,17 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
-	"errors"
-	"io/ioutil"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/ghodss/yaml"
+	"github.com/sirupsen/logrus"
 
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"

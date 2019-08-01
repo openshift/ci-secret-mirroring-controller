@@ -1,9 +1,12 @@
-package controller
+package config
 
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strings"
+
+	"github.com/ghodss/yaml"
 )
 
 // Configuration defines the action for the secret mirror
@@ -139,4 +142,35 @@ func findCycle(path []SecretLocation, nodes map[SecretLocation]bool, edges map[S
 		}
 	}
 	return nil, false
+}
+
+// Load loads and parses the config at path.
+func Load(configLocation string) (c *Configuration, err error) {
+	// we never want config loading to take down the controller
+	defer func() {
+		if r := recover(); r != nil {
+			c, err = nil, fmt.Errorf("panic loading config: %v", r)
+		}
+	}()
+	err = yamlToConfig(configLocation, &c)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.Validate(); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+func yamlToConfig(path string, c interface{}) error {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("error opening configuration file: %v", err)
+	}
+
+	if err := yaml.Unmarshal([]byte(data), &c); err != nil {
+		return fmt.Errorf("invalid configuration: %v", err)
+	}
+
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/openshift/ci-secret-mirroring-controller/pkg/controller/config"
 	"github.com/sirupsen/logrus"
 
 	coreapi "k8s.io/api/core/v1"
@@ -33,7 +34,7 @@ const (
 )
 
 // NewSecretMirror returns a new *SecretMirror to generate deletion requests.
-func NewSecretMirror(informer coreinformers.SecretInformer, client kubeclientset.Interface, config Configuration) *SecretMirror {
+func NewSecretMirror(informer coreinformers.SecretInformer, client kubeclientset.Interface, config config.Getter) *SecretMirror {
 	logger := logrus.WithField("controller", secretMirrorname)
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(logger.Infof)
@@ -58,7 +59,7 @@ func NewSecretMirror(informer coreinformers.SecretInformer, client kubeclientset
 
 // SecretMirror manages deletion requests for namespaces.
 type SecretMirror struct {
-	config Configuration
+	config config.Getter
 	client kubeclientset.Interface
 
 	lister corelisters.SecretLister
@@ -180,7 +181,7 @@ func (c *SecretMirror) reconcile(key string) error {
 	}
 
 	var mirrorErrors []error
-	for _, mirrorConfig := range c.config.Secrets {
+	for _, mirrorConfig := range c.config().Secrets {
 		if mirrorConfig.From.Namespace == namespace && mirrorConfig.From.Name == name {
 			if err := c.mirrorSecret(source, mirrorConfig.To, logger); err != nil {
 				mirrorErrors = append(mirrorErrors, err)
@@ -195,7 +196,7 @@ func (c *SecretMirror) reconcile(key string) error {
 	return nil
 }
 
-func (c *SecretMirror) mirrorSecret(source *coreapi.Secret, to SecretLocation, logger *logrus.Entry) error {
+func (c *SecretMirror) mirrorSecret(source *coreapi.Secret, to config.SecretLocation, logger *logrus.Entry) error {
 	logger = logger.WithFields(logrus.Fields{
 		"target-namespace": to.Namespace, "target-secret": to.Name},
 	)

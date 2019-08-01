@@ -14,14 +14,16 @@ import (
 	testclient "k8s.io/client-go/kubernetes/fake"
 	clientgo_testing "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/cache"
+
+	"github.com/openshift/ci-secret-mirroring-controller/pkg/controller/config"
 )
 
 func TestMirrorSecret(t *testing.T) {
-	config := Configuration{
-		Secrets: []MirrorConfig{
+	configuration := config.Configuration{
+		Secrets: []config.MirrorConfig{
 			{
-				From: SecretLocation{Namespace: "test-ns", Name: "src"},
-				To:   SecretLocation{Namespace: "test-ns", Name: "dst"},
+				From: config.SecretLocation{Namespace: "test-ns", Name: "src"},
+				To:   config.SecretLocation{Namespace: "test-ns", Name: "dst"},
 			},
 		},
 	}
@@ -31,7 +33,7 @@ func TestMirrorSecret(t *testing.T) {
 	}
 	for _, tc := range []struct {
 		id                    string
-		config                Configuration
+		config                config.Configuration
 		src                   v1.Secret
 		shouldCopy, shouldErr bool
 	}{
@@ -64,7 +66,9 @@ func TestMirrorSecret(t *testing.T) {
 			continue
 		}
 		<-ctx.Done()
-		c := NewSecretMirror(informer, client, config)
+		ca := &config.Agent{}
+		ca.Set(&configuration)
+		c := NewSecretMirror(informer, client, ca.Config)
 		if tc.shouldErr {
 			client.Fake.PrependReactor(
 				"create", "secrets",

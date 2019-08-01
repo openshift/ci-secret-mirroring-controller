@@ -62,6 +62,7 @@ func (o *options) Run() error {
 	if err := configAgent.Start(o.configLocation); err != nil {
 		logrus.WithError(err).Fatal("Error starting config agent.")
 	}
+	defer configAgent.Stop()
 
 	clusterConfig, err := loadClusterConfig()
 	if err != nil {

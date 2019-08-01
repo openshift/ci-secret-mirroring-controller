@@ -17,19 +17,18 @@ limitations under the License.
 package config
 
 import (
-	"os"
-	"reflect"
 	"sync"
-	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/sirupsen/logrus"
 )
 
 // Agent watches a path and automatically loads the config stored
 // therein.
 type Agent struct {
-	mut sync.RWMutex // do not export Lock, etc methods
-	c   *Configuration
+	mut     sync.RWMutex // do not export Lock, etc methods
+	c       *Configuration
+	watcher *fsnotify.Watcher
 }
 
 // Start will begin polling the config file at the path. If the first load
@@ -41,43 +40,43 @@ func (ca *Agent) Start(configLocation string) error {
 		return err
 	}
 	ca.Set(c)
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		logrus.WithError(err).Fatal("Error when creating watcher.")
+	}
+	ca.watcher = watcher
 	go func() {
-		var lastModTime time.Time
-		// Rarely, if two changes happen in the same second, mtime will
-		// be the same for the second change, and an mtime-based check would
-		// fail. Reload periodically just in case.
-		skips := 0
-		for range time.Tick(1 * time.Second) {
-			if skips < 600 {
-				// Check if the file changed to see if it needs to be re-read.
-				// os.Stat follows symbolic links, which is how ConfigMaps work.
-				stat, err := os.Stat(configLocation)
-				if err != nil {
-					logrus.WithField("configLocation", configLocation).WithError(err).Error("Error loading config.")
-					continue
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
 				}
-
-				recentModTime := stat.ModTime()
-
-				if !recentModTime.After(lastModTime) {
-					skips++
-					continue // file hasn't been modified
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					logrus.WithField("event.Name", event.Name).Info("modified file.")
+					if c, err := Load(configLocation); err != nil {
+						logrus.WithField("configLocation", configLocation).
+							WithError(err).Error("Error loading config.")
+					} else {
+						ca.Set(c)
+					}
 				}
-				lastModTime = recentModTime
-			}
-			if c, err := Load(configLocation); err != nil {
-				logrus.WithField("configLocation", configLocation).
-					WithError(err).Error("Error loading config.")
-			} else {
-				skips = 0
-				if !reflect.DeepEqual(c, ca.c) {
-					logrus.Info("Changes of configuration detected.")
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
 				}
-				ca.Set(c)
+				logrus.WithError(err).Error("Error occurred (watcher.Errors).")
 			}
 		}
 	}()
-	return nil
+	return watcher.Add(configLocation)
+}
+
+// Stop will stop polling the config file.
+func (ca *Agent) Stop() {
+	if err := ca.watcher.Close(); err != nil {
+		logrus.WithError(err).Error("Error occurred  when  closing watcher.")
+	}
 }
 
 // Getter returns the current Config in a thread-safe manner.

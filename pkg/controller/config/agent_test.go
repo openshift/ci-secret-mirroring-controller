@@ -73,6 +73,7 @@ func TestConfig(t *testing.T) {
 	if err := configAgent.Start(configFile.Name()); err != nil {
 		t.Errorf("expected no error (configAgent.Start) but got one: %v", err)
 	}
+	defer configAgent.Stop()
 
 	unitUnderTest = someTestClass{config: configAgent.Config}
 

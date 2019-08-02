@@ -4,13 +4,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/ghodss/yaml"
 	"github.com/sirupsen/logrus"
 
 	"k8s.io/client-go/informers"
@@ -19,6 +17,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/openshift/ci-secret-mirroring-controller/pkg/controller"
+	"github.com/openshift/ci-secret-mirroring-controller/pkg/controller/config"
 )
 
 const (
@@ -59,18 +58,9 @@ func (o *options) Validate() error {
 }
 
 func (o *options) Run() error {
-	data, err := ioutil.ReadFile(o.configLocation)
-	if err != nil {
-		return fmt.Errorf("error opening configuration file: %v", err)
-	}
-
-	var config controller.Configuration
-	if err := yaml.Unmarshal([]byte(data), &config); err != nil {
-		return fmt.Errorf("invalid configuration: %v", err)
-	}
-
-	if err := config.Validate(); err != nil {
-		logrus.WithError(err).Fatal("invalid secret mirroring config")
+	configAgent := &config.Agent{}
+	if err := configAgent.Start(o.configLocation); err != nil {
+		logrus.WithError(err).Fatal("Error starting config agent.")
 	}
 
 	clusterConfig, err := loadClusterConfig()
@@ -85,7 +75,7 @@ func (o *options) Run() error {
 
 	informerFactory := informers.NewSharedInformerFactory(client, resync)
 
-	secretMirror := controller.NewSecretMirror(informerFactory.Core().V1().Secrets(), client, config)
+	secretMirror := controller.NewSecretMirror(informerFactory.Core().V1().Secrets(), client, configAgent.Config)
 	stop := make(chan struct{})
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)

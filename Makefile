@@ -2,7 +2,13 @@ build:
 	go build ./cmd/...
 .PHONY: build
 
-install:
+build_version := $(shell git describe --tags --always --dirty)
+
+version:
+	echo "$(build_version)" > ./image/version.text
+.PHONY: version
+
+install: version
 	go install ./cmd/...
 .PHONY: install
 

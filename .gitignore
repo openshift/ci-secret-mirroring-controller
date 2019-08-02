@@ -2,3 +2,4 @@
 /ci-secret-mirroring-controller
 .vscode/
 *.iml
+/image/version.text

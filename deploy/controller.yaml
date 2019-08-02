@@ -20,7 +20,7 @@ spec:
       serviceAccount: secret-mirroring-controller
       containers:
       - name: secret-mirroring-controller
-        image: secret-mirroring-controller:latest
+        image: ci-secret-mirroring-controller:latest
         imagePullPolicy: Always
         command:
         - /ci-secret-mirroring-controller
@@ -44,5 +44,5 @@ spec:
       - secret-mirroring-controller
       from:
         kind: ImageStreamTag
-        name: secret-mirroring-controller:latest
+        name: ci-secret-mirroring-controller:latest
         namespace: ci

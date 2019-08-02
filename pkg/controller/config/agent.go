@@ -18,6 +18,7 @@ package config
 
 import (
 	"os"
+	"reflect"
 	"sync"
 	"time"
 
@@ -69,6 +70,9 @@ func (ca *Agent) Start(configLocation string) error {
 					WithError(err).Error("Error loading config.")
 			} else {
 				skips = 0
+				if !reflect.DeepEqual(c, ca.c) {
+					logrus.Info("Changes of configuration detected.")
+				}
 				ca.Set(c)
 			}
 		}

@@ -17,6 +17,7 @@ limitations under the License.
 package config
 
 import (
+	"path/filepath"
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
@@ -53,7 +54,7 @@ func (ca *Agent) Start(configLocation string) error {
 					return
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write {
-					logrus.WithField("event.Name", event.Name).Info("modified file.")
+					logrus.WithField("event.Name", event.Name).Info("modified file in the watched folder.")
 					if c, err := Load(configLocation); err != nil {
 						logrus.WithField("configLocation", configLocation).
 							WithError(err).Error("Error loading config.")
@@ -69,7 +70,7 @@ func (ca *Agent) Start(configLocation string) error {
 			}
 		}
 	}()
-	return watcher.Add(configLocation)
+	return watcher.Add(filepath.Dir(configLocation))
 }
 
 // Stop will stop polling the config file.

@@ -53,14 +53,12 @@ func (ca *Agent) Start(configLocation string) error {
 				if !ok {
 					return
 				}
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					logrus.WithField("event.Name", event.Name).Info("modified file in the watched folder.")
-					if c, err := Load(configLocation); err != nil {
-						logrus.WithField("configLocation", configLocation).
-							WithError(err).Error("Error loading config.")
-					} else {
-						ca.Set(c)
-					}
+				logrus.WithField("event.Name", event.Name).Info("modified file in the watched folder.")
+				if c, err := Load(configLocation); err != nil {
+					logrus.WithField("configLocation", configLocation).
+						WithError(err).Error("Error loading config.")
+				} else {
+					ca.Set(c)
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
@@ -70,7 +68,9 @@ func (ca *Agent) Start(configLocation string) error {
 			}
 		}
 	}()
-	return watcher.Add(filepath.Dir(configLocation))
+	watchingDir := filepath.Dir(configLocation)
+	logrus.WithField("watchingDir", watchingDir).Info("watch dir")
+	return watcher.Add(watchingDir)
 }
 
 // Stop will stop polling the config file.

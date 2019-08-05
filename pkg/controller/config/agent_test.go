@@ -181,7 +181,7 @@ func TestConfigWithSymlink(t *testing.T) {
 	}
 
 	mappingFileNameInDateDir2 := filepath.Join(dateDir2, "mapping.yaml")
-	if err = ioutil.WriteFile(mappingFileNameInDateDir2, []byte(config1Str), 0644); err != nil {
+	if err = ioutil.WriteFile(mappingFileNameInDateDir2, []byte(config2Str), 0644); err != nil {
 		t.Errorf("expected no error (configFile.Write) but got one: %v", err)
 	}
 

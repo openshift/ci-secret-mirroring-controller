@@ -18,8 +18,3 @@ lint:
 format:
 	gofmt -s -w $(shell go list -f '{{ .Dir }}' ./... )
 .PHONY: format
-
-deploy:
-	oc apply -n ci -f deploy/controller.yaml
-	oc apply -n ci -f deploy/controller-rbac.yaml
-.PHONY: deploy

@@ -23,9 +23,4 @@ deletion prevents the most common outage scenarios.
 
 ## Deployment
 
-Deployment of the controller requires `system:admin` level control, as it requires creating wide-reaching `ClusterRole`s and
-`ClusterRoleBinding`s. To deploy, run:
-
-```
-make deploy
-```
+Its deployment is managed by [`applyconfig`](https://github.com/openshift/ci-tools/tree/master/cmd/applyconfig) with [those assets](https://github.com/openshift/release/tree/master/core-services/secret-mirroring).
